@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+        <File name="ModLog" fileName="logs/resurgentpvpstats.log" append="false">
+            <PatternLayout pattern="[%d{HH:mm:ss.SSS}] [%t] %-5level [Resurgent PVP Stats] - %logger{36} - %msg%n"/>
+        </File>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="[%d{HH:mm:ss.SSS}] [%t] %-5level [Resurgent PVP Stats] - %logger{36} - %msg%n"/>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Logger name="com.mcresurgence" level="debug" additivity="false">
+            <AppenderRef ref="ModLog"/>
+        </Logger>
+        <Root level="info">
+            <AppenderRef ref="Console"/>
+        </Root>
+    </Loggers>
+</Configuration>

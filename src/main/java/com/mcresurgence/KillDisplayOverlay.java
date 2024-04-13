@@ -10,6 +10,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import org.apache.logging.log4j.Logger;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Iterator;
@@ -28,7 +30,10 @@ public class KillDisplayOverlay extends Gui {
 
     @SubscribeEvent
     public void onRenderGameOverlay(RenderGameOverlayEvent.Post event) {
+        Logger logger = ResurgentPVPStats.LOGGER;
+
         if (event.getType() == RenderGameOverlayEvent.ElementType.ALL) {
+            logger.info("Rendering game overlay");  // Add this for testing
             drawOverlay();
         }
     }
@@ -38,30 +43,28 @@ public class KillDisplayOverlay extends Gui {
         Iterator<KillEntry> iterator = killEntries.iterator();
         while (iterator.hasNext()) {
             KillEntry entry = iterator.next();
-            if (System.currentTimeMillis() - entry.getStartTime() > 5000) { // 5 seconds
+            if (System.currentTimeMillis() - entry.getStartTime() > 5000) {
                 iterator.remove();
-            } else {
-                int xPos = 10;
-                // Render killer's face
-                renderPlayerHead(xPos, yPos, entry.getKillerEntity());
-                xPos += 24;
-                minecraft.fontRenderer.drawStringWithShadow("Killer: " + entry.getKiller(), xPos, yPos, 0xffffff);
-
-                // Render item icon
-                GlStateManager.pushMatrix();
-                GlStateManager.translate(xPos + 100, yPos, 0); // Adjust X, Y positioning to not overlap text
-                GlStateManager.scale(1.0F, 1.0F, 1.0F);
-                minecraft.getRenderItem().renderItemAndEffectIntoGUI(entry.getWeapon(), 0, 0);
-                GlStateManager.popMatrix();
-
-                // Render killed player's face
-                xPos += 150;
-                renderPlayerHead(xPos, yPos, entry.getKilledEntity());
-                xPos += 24;
-                minecraft.fontRenderer.drawStringWithShadow("killed: " + entry.getKilled(), xPos, yPos, 0xffffff);
-
-                yPos += 24 + minecraft.fontRenderer.FONT_HEIGHT + 10;
+                continue;
             }
+
+            int xPos = 10;
+            renderPlayerHead(xPos, yPos, entry.getKillerEntity());
+            xPos += 24;
+            minecraft.fontRenderer.drawStringWithShadow(entry.getKiller(), xPos, yPos, 0xffffff);
+
+            xPos += 100;
+            GlStateManager.pushMatrix();
+            GlStateManager.translate(xPos, yPos, 0);
+            minecraft.getRenderItem().renderItemAndEffectIntoGUI(entry.getWeapon(), 0, 0);
+            GlStateManager.popMatrix();
+
+            xPos += 50;
+            renderPlayerHead(xPos, yPos, entry.getKilledEntity());
+            xPos += 24;
+            minecraft.fontRenderer.drawStringWithShadow(entry.getKilled(), xPos, yPos, 0xffffff);
+
+            yPos += minecraft.fontRenderer.FONT_HEIGHT + 30;
         }
     }
 

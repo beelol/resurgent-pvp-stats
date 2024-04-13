@@ -1,16 +1,16 @@
 [
 {
-  "modid": "examplemod",
-  "name": "Example Mod",
-  "description": "Example placeholder mod.",
-  "version": "${version}",
-  "mcversion": "${mcversion}",
-  "url": "",
-  "updateUrl": "",
-  "authorList": ["ExampleDude"],
-  "credits": "The Forge and FML guys, for making this example",
-  "logoFile": "",
-  "screenshots": [],
-  "dependencies": []
+  "modid": "resurgent-pvp-stats",
+  "name": "Resurgent PVP Stats",
+  "description": "Provides detailed PvP statistics and custom logging features.",
+  "version": "${version}",   // Replace with your current version, e.g., "1.0.0"
+  "mcversion": "${mcversion}",   // Replace with the targeted Minecraft version, e.g., "1.12.2"
+  "url": "",   // Add URL if available
+  "updateUrl": "",   // Add URL if there's a specific update check URL
+  "authorList": ["Team Resurgence"],
+  "credits": "Team Resurgence",
+  "logoFile": "",   // Provide path to your logo file within resources if available
+  "screenshots": [],   // Provide paths to screenshots within resources if available
+  "dependencies": []   // List dependencies if there are any
 }
 ]
