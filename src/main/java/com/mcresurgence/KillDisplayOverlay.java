@@ -1,5 +1,6 @@
 package com.mcresurgence;
 
+import com.mojang.authlib.minecraft.MinecraftProfileTexture;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.renderer.GlStateManager;
@@ -157,55 +158,50 @@ public class KillDisplayOverlay extends Gui {
                 player.getGameProfile().getProperties().get("textures");
 
         if (properties == null || properties.isEmpty()) {
-            return;  // Exit if there are no texture properties
+            logger.info(String.format("Player [%s] has no texture properties. Continuing regardless.", player.getDisplayName()));
+
+        } else {
+            logger.info(String.format("Player [%s] has texture properties. We could use one.", player.getDisplayName()));
         }
-
-        logger.info( String.format("Player [%s] has texture properties.", player.getDisplayName()));
-
-//        Property property = properties.iterator().next(); // Safely access the first property
-//
-//        if (property == null) {
-//            return;  // Exit if the property is null
-//        }
 
         ResourceLocation skinLocation = null;
 
         if (Minecraft.getMinecraft().player.getGameProfile().getId() == player.getGameProfile().getId()) {
-            logger.info( String.format("This player head is the same as the minecraft gameprofile ID, using SP player's skin"));
+            logger.info(String.format("Player %s is the same as the minecraft gameprofile ID, using SP player's skin", player.getDisplayName()));
 
             skinLocation = Minecraft.getMinecraft().player.getLocationSkin();
+        } else {
+            logger.info(String.format("Player %s is not the user on this client, trying next method.", player.getDisplayName()));
         }
 
-//        ResourceLocation skinLocation = Minecraft.getMinecraft().getSkinManager().loadSkin(new MinecraftProfileTexture(property.getValue(), null), MinecraftProfileTexture.Type.SKIN);
+
+//        ResourceLocation skinLocation =
+//        Minecraft.getMinecraft().getSkinManager().loadSkin(new MinecraftProfileTexture(property.getValue(), null), MinecraftProfileTexture.Type.SKIN);
+//
+
+        Map<MinecraftProfileTexture.Type, MinecraftProfileTexture> map = minecraft.getSkinManager().loadSkinFromCache(player.getGameProfile());
+
+        if (map.containsKey(MinecraftProfileTexture.Type.SKIN)) {
+            skinLocation = minecraft.getSkinManager().loadSkin(map.get(MinecraftProfileTexture.Type.SKIN), MinecraftProfileTexture.Type.SKIN);
+
+            logger.info(String.format("Skin %s loaded via skinManager for player %s", skinLocation.toString(), player.getDisplayName()));
+        } else {
+            logger.info(String.format("Failed to load skin for player %s.", player.getDisplayName()));
+        }
+
 
         if (skinLocation == null) {
             // If there's no custom skin, use the default skin based on player UUID
             skinLocation = DefaultPlayerSkin.getDefaultSkin(player.getUniqueID());
-            logger.info("Player skinLocation is null.");
-        } else {
-            logger.info("Found player's skin location.");
+            logger.info("Player skinLocation is null after all methods. Using default skin.");
         }
-//
-//        if (player.getGameProfile() != null) {
-//            Map<MinecraftProfileTexture.Type, MinecraftProfileTexture> map = minecraft.getSkinManager().loadSkinFromCache(player.getGameProfile());
-//
-//            if (map.containsKey(MinecraftProfileTexture.Type.SKIN)) {
-//                skinLocation = minecraft.getSkinManager().loadSkin(map.get(MinecraftProfileTexture.Type.SKIN), MinecraftProfileTexture.Type.SKIN);
-//
-//                logger.info("Skin loaded: " + skinLocation.toString());
-//            } else {
-//                logger.info("Default skin used.");
-//            }
-//        }
-
-
 
 
         GlStateManager.pushMatrix();
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 
         Minecraft.getMinecraft().getTextureManager().bindTexture(skinLocation);
-        GlStateManager.translate(x, y + headSize / 2 , 0);
+        GlStateManager.translate(x, y + headSize / 2, 0);
 
         GlStateManager.scale(1.0F, 1.0F, 1.0F);
 
