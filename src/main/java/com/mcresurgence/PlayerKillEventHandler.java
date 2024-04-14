@@ -29,7 +29,11 @@ public class PlayerKillEventHandler {
                 Entity killed = event.getEntity();
 
                 // Send packet to all clients
-                NetworkHandler.INSTANCE.sendToAll(new DeathInfoPacket(killer.getUniqueID(), killer.getName(), killed.getUniqueID(), killed.getName(), weapon.getDisplayName()));
+            try {
+                NetworkHandler.INSTANCE.sendToAll(new DeathInfoPacket(killer.getUniqueID(), killer.getName(), killed.getUniqueID(), killed.getName(), weapon.getItem().getRegistryName().toString()));
+            } catch (Exception e) {
+//                throw new RuntimeException(e);
+            }
 //            }
         }
     }

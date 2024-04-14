@@ -1,18 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="WARN">
     <Appenders>
-        <File name="ModLog" fileName="logs/resurgentpvpstats.log" append="false">
-            <PatternLayout pattern="[%d{HH:mm:ss.SSS}] [%t] %-5level [Resurgent PVP Stats] - %logger{36} - %msg%n"/>
-        </File>
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout pattern="[%d{HH:mm:ss.SSS}] [%t] %-5level [Resurgent PVP Stats] - %logger{36} - %msg%n"/>
         </Console>
+        <File name="ModLog" fileName="logs/resurgentpvpstats.log" append="true">
+            <PatternLayout pattern="[%d{HH:mm:ss.SSS}] [%t] %-5level [Resurgent PVP Stats] - %logger{36} - %msg%n"/>
+        </File>
+        <RollingFile name="RollingModLog" fileName="logs/resurgentpvpstats.log" filePattern="logs/$${date:yyyy-MM}/resurgentpvpstats-%d{MM-dd-yyyy}-%i.log.gz">
+            <PatternLayout pattern="[%d{HH:mm:ss.SSS}] [%t] %-5level [Resurgent PVP Stats] - %logger{36} - %msg%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy />
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="20"/>
+        </RollingFile>
     </Appenders>
     <Loggers>
         <Logger name="com.mcresurgence" level="debug" additivity="false">
             <AppenderRef ref="ModLog"/>
+            <AppenderRef ref="RollingModLog"/>
         </Logger>
-        <Root level="info">
+        <Root level="debug"> <!-- Set root logging to debug during development -->
             <AppenderRef ref="Console"/>
         </Root>
     </Loggers>

@@ -1,9 +1,11 @@
 package com.mcresurgence;
+
 import org.apache.logging.log4j.Logger;
 
 public class ModLogger {
     private Logger logger;
     private String prefix;
+    private static final boolean VERBOSE = true;
 
     public ModLogger(Logger logger, String prefix) {
         this.logger = logger;
@@ -11,19 +13,39 @@ public class ModLogger {
     }
 
     public void info(String message) {
-        logger.info(prefix + message);
+        String finalMessage = String.format("%s%s", prefix, message);
+        logger.info(finalMessage);
+
+        if (VERBOSE) {
+            System.out.println(finalMessage);
+        }
     }
 
     public void warn(String message) {
-        logger.warn(prefix + message);
+        String finalMessage = String.format("WARN: %s%s", prefix, message);
+        logger.warn(finalMessage);
+
+        if (VERBOSE) {
+            System.out.println(finalMessage);
+        }
     }
 
     public void error(String message) {
-        logger.error(prefix + message);
+        String finalMessage = String.format("ERROR: %s%s", prefix, message);
+        logger.error(finalMessage);
+
+        if (VERBOSE) {
+            System.out.println(finalMessage);
+        }
     }
 
     public void debug(String message) {
-        logger.debug(prefix + message);
+        String finalMessage = String.format("DEBUG: %s%s", prefix, message);
+        logger.debug(finalMessage);
+
+        if (VERBOSE) {
+            System.out.println(finalMessage);
+        }
     }
 
     // Additional logging methods as needed
