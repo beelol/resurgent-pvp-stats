@@ -24,6 +24,7 @@ public class KillDisplayOverlay extends Gui {
     private long lastTickTime = 0;
     private static Map<KillEntry, Float> alphaMap = new HashMap<>();
     private static Map<KillEntry, Long> startTimeMap = new HashMap<>();
+    private static final Map<KillEntry, Integer> yPosMap = new HashMap<>();
 
     public KillDisplayOverlay(Minecraft mc) {
         this.minecraft = mc;
@@ -35,7 +36,7 @@ public class KillDisplayOverlay extends Gui {
     }
 
     public static void displayKillInfo(String killer, ItemStack weapon, String killed, EntityPlayer killerEntity, Entity killedEntity) {
-        KillEntry entry = new KillEntry(killer, weapon, killed, System.currentTimeMillis(), killerEntity, killedEntity);
+        KillEntry entry = new KillEntry(killer, weapon, killed, killerEntity, killedEntity);
 
         killEntries.add(entry);
 
@@ -65,24 +66,25 @@ public class KillDisplayOverlay extends Gui {
         Iterator<KillEntry> iterator = killEntries.iterator();
         int index = 0; // Initialize an index counter for spacing calculation
 
+        int yPos = baseYPos + paddingY * index; // Calculate yPos based on the current index
+
         while (iterator.hasNext()) {
             KillEntry entry = iterator.next();
             Long startTime = startTimeMap.getOrDefault(entry, 0L);
             float alpha = alphaMap.getOrDefault(entry, 1.0f);
 
-            if (currentTime - startTime > FADE_DELAY) {
-                alpha = Math.max(0, alpha - fadeRate * (currentTime - lastTickTime));
+            if (startTimeMap.containsKey(entry) && currentTime - startTime > FADE_DELAY) {
+                alpha = Math.max(0, alpha - fadeRate * deltaTime);
                 alphaMap.put(entry, alpha);
 
                 if (alpha <= 0) {
-                    iterator.remove();
                     alphaMap.remove(entry);
                     startTimeMap.remove(entry);
+                    iterator.remove();
                     continue;
                 }
             }
 
-            int yPos = baseYPos + paddingY * index; // Calculate yPos based on the current index
 
             drawEntry(entry, yPos, alpha);
             index++; // Increment the index only if the entry is not removed
@@ -94,7 +96,7 @@ public class KillDisplayOverlay extends Gui {
         int rectY = yPos - 3;
         int entryWidth = 250; // Estimate the width to cover icon + text
         int entryHeight = 20; // Estimate the height to cover the text and icon
-int paddingHeadToText = 4;
+        int paddingHeadToText = 4;
 
         float maxBGAlpha = 255.0F / 2.0F;
         int backgroundColor = ((int) (alpha * maxBGAlpha) << 24) | 0x000000;  // Apply alpha to background color
