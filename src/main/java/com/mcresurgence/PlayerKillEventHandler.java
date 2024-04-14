@@ -25,16 +25,16 @@ public class PlayerKillEventHandler {
             Entity killedEntity = event.getEntity();
             logger.info("Player " + killer.getName() + " killed " + killedEntity.getName() + " using " + weapon.getDisplayName());
 
-//            if (event.getEntity() instanceof EntityPlayer) {
+            if (killedEntity instanceof EntityPlayer) {
                 Entity killed = event.getEntity();
 
                 // Send packet to all clients
-            try {
-                NetworkHandler.INSTANCE.sendToAll(new DeathInfoPacket(killer.getUniqueID(), killer.getName(), killed.getUniqueID(), killed.getName(), weapon.getItem().getRegistryName().toString()));
-            } catch (Exception e) {
+                try {
+                    NetworkHandler.INSTANCE.sendToAll(new DeathInfoPacket(killer.getUniqueID(), killer.getName(), killed.getUniqueID(), killed.getName(), weapon.getItem().getRegistryName().toString()));
+                } catch (Exception e) {
 //                throw new RuntimeException(e);
+                }
             }
-//            }
         }
     }
 }
