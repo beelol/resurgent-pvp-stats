@@ -18,6 +18,7 @@ public class KillDisplayOverlay extends Gui {
     private final Minecraft minecraft;
     private static final List<KillEntry> killEntries = new ArrayList<>();
     private static final long FADE_DELAY = 5000; // 5 seconds delay before starting to fade
+    private static final int headSize = 8; // 5 seconds delay before starting to fade
 
     // For fade effect
     private long lastTickTime = 0;
@@ -66,7 +67,7 @@ public class KillDisplayOverlay extends Gui {
 
         while (iterator.hasNext()) {
             KillEntry entry = iterator.next();
-            Long startTime = startTimeMap.getOrDefault(entry, currentTime);
+            Long startTime = startTimeMap.getOrDefault(entry, 0L);
             float alpha = alphaMap.getOrDefault(entry, 1.0f);
 
             if (currentTime - startTime > FADE_DELAY) {
@@ -93,6 +94,7 @@ public class KillDisplayOverlay extends Gui {
         int rectY = yPos - 3;
         int entryWidth = 250; // Estimate the width to cover icon + text
         int entryHeight = 20; // Estimate the height to cover the text and icon
+int paddingHeadToText = 4;
 
         float maxBGAlpha = 255.0F / 2.0F;
         int backgroundColor = ((int) (alpha * maxBGAlpha) << 24) | 0x000000;  // Apply alpha to background color
@@ -103,26 +105,26 @@ public class KillDisplayOverlay extends Gui {
         drawRect(rectX, rectY, rectX + entryWidth, rectY + entryHeight, backgroundColor);
 
         int xPos = 16;
-        renderPlayerHead(xPos, yPos, entry.getKillerEntity());
-        xPos += 20;
-
         int textYOffset = yPos + 8 - minecraft.fontRenderer.FONT_HEIGHT / 2;
 
+        renderPlayerHead(xPos, yPos, entry.getKillerEntity());
+        xPos += headSize + paddingHeadToText;
         displayText(entry.getKiller(), xPos, textYOffset, alpha);
 
-        xPos += 90;
+
+        xPos += 85;
         GlStateManager.pushMatrix();
         GlStateManager.translate(xPos, yPos, 0);
         minecraft.getRenderItem().renderItemAndEffectIntoGUI(entry.getWeapon(), 0, 0);
         GlStateManager.popMatrix();
 
-        xPos += 30;
+        xPos += 40;
         if (entry.getKilledEntity() instanceof EntityPlayer) {
             EntityPlayer killedPlayer = (EntityPlayer) entry.getKilledEntity();
             renderPlayerHead(xPos, yPos, killedPlayer);
         }
 
-        xPos += 12;
+        xPos += headSize + paddingHeadToText;
         displayText(entry.getKilled(), xPos, textYOffset, alpha);
 
         GlStateManager.disableBlend();
@@ -133,7 +135,6 @@ public class KillDisplayOverlay extends Gui {
     }
 
     private void renderPlayerHead(int x, int y, EntityPlayer player) {
-        int headSize = 8;
         ModLogger logger = ResurgentPVPStats.modLogger;
 
         logger.info("Attempting to renderPlayerHead");
