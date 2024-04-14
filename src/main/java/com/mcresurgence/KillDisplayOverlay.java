@@ -24,7 +24,7 @@ public class KillDisplayOverlay extends Gui {
     private long lastTickTime = 0;
     private static Map<KillEntry, Float> alphaMap = new HashMap<>();
     private static Map<KillEntry, Long> startTimeMap = new HashMap<>();
-    private static final Map<KillEntry, Integer> yPosMap = new HashMap<>();
+    private static final Map<KillEntry, Float> yPosMap = new HashMap<>();
 
     public KillDisplayOverlay(Minecraft mc) {
         this.minecraft = mc;
@@ -57,6 +57,9 @@ public class KillDisplayOverlay extends Gui {
         long deltaTime = (lastTickTime > 0) ? currentTime - lastTickTime : 0;
         lastTickTime = currentTime;
 
+        float moveRatePerSecond = 50;
+        float moveRate = moveRatePerSecond / 1000;  // Fade rate per millisecond
+
         float alphaFadePerSecond = 0.5F;
         float fadeRate = alphaFadePerSecond / 1000;  // Fade rate per millisecond
 
@@ -66,10 +69,20 @@ public class KillDisplayOverlay extends Gui {
         Iterator<KillEntry> iterator = killEntries.iterator();
         int index = 0; // Initialize an index counter for spacing calculation
 
-        int yPos = baseYPos + paddingY * index; // Calculate yPos based on the current index
-
         while (iterator.hasNext()) {
             KillEntry entry = iterator.next();
+
+            float targetYPos = baseYPos + paddingY * index;
+
+            // Interpolate current yPos towards targetYPos
+            float currentYPos = yPosMap.getOrDefault(entry, targetYPos);
+
+            if (currentYPos != targetYPos) {
+                currentYPos = Math.max(targetYPos, currentYPos - moveRate * deltaTime);
+
+                yPosMap.put(entry, currentYPos);
+            }
+
             Long startTime = startTimeMap.getOrDefault(entry, 0L);
             float alpha = alphaMap.getOrDefault(entry, 1.0f);
 
@@ -86,17 +99,19 @@ public class KillDisplayOverlay extends Gui {
             }
 
 
-            drawEntry(entry, yPos, alpha);
+            drawEntry(entry, (int) currentYPos, alpha);
             index++; // Increment the index only if the entry is not removed
         }
     }
 
     private void drawEntry(KillEntry entry, int yPos, float alpha) {
-        int rectX = 8;
+        int entryPosStart = 8;
         int rectY = yPos - 3;
         int entryWidth = 250; // Estimate the width to cover icon + text
         int entryHeight = 20; // Estimate the height to cover the text and icon
         int paddingHeadToText = 4;
+
+        int entryPaddingX = 16;
 
         float maxBGAlpha = 255.0F / 2.0F;
         int backgroundColor = ((int) (alpha * maxBGAlpha) << 24) | 0x000000;  // Apply alpha to background color
@@ -104,9 +119,9 @@ public class KillDisplayOverlay extends Gui {
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
 
-        drawRect(rectX, rectY, rectX + entryWidth, rectY + entryHeight, backgroundColor);
+        drawRect(entryPosStart, rectY, entryPosStart + entryWidth, rectY + entryHeight, backgroundColor);
 
-        int xPos = 16;
+        int xPos = entryPaddingX;
         int textYOffset = yPos + 8 - minecraft.fontRenderer.FONT_HEIGHT / 2;
 
         renderPlayerHead(xPos, yPos, entry.getKillerEntity());
@@ -121,13 +136,22 @@ public class KillDisplayOverlay extends Gui {
         GlStateManager.popMatrix();
 
         xPos += 40;
+
+
+//        xPos += headSize + paddingHeadToText;
+
+        int killedTextWidth = minecraft.fontRenderer.getStringWidth(entry.getKilled());
+
+        int endX = entryWidth + entryPosStart - entryPaddingX;
+        int endTextX = endX - killedTextWidth;
+        int endHeadX = endTextX - headSize - paddingHeadToText;
+
         if (entry.getKilledEntity() instanceof EntityPlayer) {
             EntityPlayer killedPlayer = (EntityPlayer) entry.getKilledEntity();
-            renderPlayerHead(xPos, yPos, killedPlayer);
+            renderPlayerHead(endHeadX, yPos, killedPlayer);
         }
 
-        xPos += headSize + paddingHeadToText;
-        displayText(entry.getKilled(), xPos, textYOffset, alpha);
+        displayText(entry.getKilled(), endTextX, textYOffset, alpha);
 
         GlStateManager.disableBlend();
     }
