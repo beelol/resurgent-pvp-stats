@@ -19,6 +19,7 @@ public class KillDisplayOverlay extends Gui {
     private static final List<KillEntry> killEntries = new ArrayList<>();
     private static final long FADE_DELAY = 5000; // 5 seconds delay before starting to fade
     private static final int headSize = 8; // 5 seconds delay before starting to fade
+    private static final int itemWidth = 16;
 
     // For fade effect
     private long lastTickTime = 0;
@@ -42,7 +43,7 @@ public class KillDisplayOverlay extends Gui {
 
         alphaMap.put(entry, 1.0f);
 
-        startTimeMap.put(entry, System.currentTimeMillis());  // Capture the start time
+        startTimeMap.put(entry, System.currentTimeMillis());
     }
 
     @SubscribeEvent
@@ -57,8 +58,8 @@ public class KillDisplayOverlay extends Gui {
         long deltaTime = (lastTickTime > 0) ? currentTime - lastTickTime : 0;
         lastTickTime = currentTime;
 
-        float moveRatePerSecond = 50;
-        float moveRate = moveRatePerSecond / 1000;  // Fade rate per millisecond
+        float moveRatePerSecond = 10;
+        float moveDistancePerTick = moveRatePerSecond * (deltaTime / 1000.0f); // Distance to move per tick
 
         float alphaFadePerSecond = 0.5F;
         float fadeRate = alphaFadePerSecond / 1000;  // Fade rate per millisecond
@@ -74,12 +75,10 @@ public class KillDisplayOverlay extends Gui {
 
             float targetYPos = baseYPos + paddingY * index;
 
-            // Interpolate current yPos towards targetYPos
             float currentYPos = yPosMap.getOrDefault(entry, targetYPos);
 
-            if (currentYPos != targetYPos) {
-                currentYPos = Math.max(targetYPos, currentYPos - moveRate * deltaTime);
-
+            if (currentYPos > targetYPos) {
+                currentYPos = Math.max(targetYPos, currentYPos - moveDistancePerTick);
                 yPosMap.put(entry, currentYPos);
             }
 
@@ -93,11 +92,11 @@ public class KillDisplayOverlay extends Gui {
                 if (alpha <= 0) {
                     alphaMap.remove(entry);
                     startTimeMap.remove(entry);
+                    yPosMap.remove(entry);
                     iterator.remove();
                     continue;
                 }
             }
-
 
             drawEntry(entry, (int) currentYPos, alpha);
             index++; // Increment the index only if the entry is not removed
@@ -111,10 +110,16 @@ public class KillDisplayOverlay extends Gui {
         int entryHeight = 20; // Estimate the height to cover the text and icon
         int paddingHeadToText = 4;
 
+        int entryStartX = entryPosStart;
+        int entryEndX = entryPosStart + entryWidth;
+
+        int centerX = (entryStartX + entryEndX) / 2;
+        int itemPositionX = centerX - itemWidth / 2;
+
         int entryPaddingX = 16;
 
         float maxBGAlpha = 255.0F / 2.0F;
-        int backgroundColor = ((int) (alpha * maxBGAlpha) << 24) | 0x000000;  // Apply alpha to background color
+        int backgroundColor = ((int) (alpha * maxBGAlpha) << 24) | 0x000000;
 
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
@@ -128,21 +133,17 @@ public class KillDisplayOverlay extends Gui {
         xPos += headSize + paddingHeadToText;
         displayText(entry.getKiller(), xPos, textYOffset, alpha);
 
+        int endX = entryWidth + entryPosStart - entryPaddingX;
 
-        xPos += 85;
         GlStateManager.pushMatrix();
-        GlStateManager.translate(xPos, yPos, 0);
+        GlStateManager.translate(itemPositionX, yPos, 0);
+
         minecraft.getRenderItem().renderItemAndEffectIntoGUI(entry.getWeapon(), 0, 0);
+
         GlStateManager.popMatrix();
-
-        xPos += 40;
-
-
-//        xPos += headSize + paddingHeadToText;
 
         int killedTextWidth = minecraft.fontRenderer.getStringWidth(entry.getKilled());
 
-        int endX = entryWidth + entryPosStart - entryPaddingX;
         int endTextX = endX - killedTextWidth;
         int endHeadX = endTextX - headSize - paddingHeadToText;
 
@@ -235,5 +236,13 @@ public class KillDisplayOverlay extends Gui {
         drawModalRectWithCustomSizedTexture(0, 0, 8, 8, 8, 8, 64, 64);
 
         GlStateManager.popMatrix();
+    }
+
+    private float calculateYPosition(int index) {
+
+        int baseYPos = 15;
+        int paddingY = minecraft.fontRenderer.FONT_HEIGHT + 15;
+
+        return baseYPos + paddingY * index;
     }
 }
