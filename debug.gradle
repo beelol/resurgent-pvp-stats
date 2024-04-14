@@ -1,0 +1,25 @@
+// Define the path to the CurseForge instance's mods directory
+def curseforgeModsDir = '/Users/bilal/Documents/curseforge/minecraft/Instances/RESURGENCE - COMBAT EVOLVED (2)/mods'
+
+task copyModJarToCurse(type: Copy) {
+    // Depends on the 'jar' task to ensure the JAR is built before copying
+    dependsOn 'build'
+
+    // Define the directory where the built JAR will be taken from
+    from('build/libs') {
+        // Include the JAR file that matches your mod's naming scheme
+        include "${project.archivesBaseName}*.jar"
+    }
+    // Define the destination directory
+    into curseforgeModsDir
+
+    doFirst {
+        // Optionally, print a message indicating the task is being run
+        println "Copying mod JAR to $curseforgeModsDir"
+    }
+
+    doLast {
+        // Optionally, print a message indicating the task has completed
+        println "Mod JAR copied successfully."
+    }
+}

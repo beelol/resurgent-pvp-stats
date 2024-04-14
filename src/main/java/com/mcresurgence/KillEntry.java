@@ -1,5 +1,6 @@
 package com.mcresurgence;
 
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 
@@ -9,9 +10,9 @@ public class KillEntry {
     private final String killed;
     private final long startTime;
     private final EntityPlayer killerEntity;
-    private final EntityPlayer killedEntity;
+    private final Entity killedEntity;
 
-    public KillEntry(String killer, ItemStack weapon, String killed, long startTime, EntityPlayer killerEntity, EntityPlayer killedEntity) {
+    public KillEntry(String killer, ItemStack weapon, String killed, long startTime, EntityPlayer killerEntity, Entity killedEntity) {
         this.killer = killer;
         this.weapon = weapon;
         this.killed = killed;
@@ -40,7 +41,7 @@ public class KillEntry {
         return killerEntity;
     }
 
-    public EntityPlayer getKilledEntity() {
+    public Entity getKilledEntity() {
         return killedEntity;
     }
 }
