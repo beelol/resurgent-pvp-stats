@@ -1,5 +1,5 @@
 // Define the path to the CurseForge instance's mods directory
-def curseforgeModsDir = '/Users/bilal/Documents/curseforge/minecraft/Instances/RESURGENCE - COMBAT EVOLVED (2)/mods'
+def curseforgeModsDir = '/Users/bilal/Documents/curseforge/minecraft/Instances/Resurgence/mods/1.12.2'
 
 task copyModJarToCurse(type: Copy) {
     // Depends on the 'jar' task to ensure the JAR is built before copying

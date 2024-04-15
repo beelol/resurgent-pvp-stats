@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PlayerKillScoreEntry {
-    private int killCount;
+    private int killCount = 0;
     private List<PlayerKillInfo> kills;
 
     public PlayerKillScoreEntry() {

@@ -16,6 +16,7 @@ public class ResurgentPVPStatsConfiguration {
         String serverConfigFilename = "server.cfg";
 
         Path clientConfigPath = Paths.get(configDir.toString(), ResurgentPVPStats.MODID, clientConfigFilename);
+
         Path serverConfigPath = Paths.get(configDir.toString(), ResurgentPVPStats.MODID, serverConfigFilename);
 
         // Load Client Configuration

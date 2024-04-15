@@ -3,12 +3,12 @@ package com.mcresurgence;
 import com.mcresurgence.config.PlayerJoinHandler;
 import com.mcresurgence.config.ResurgentPVPStatsConfiguration;
 import com.mcresurgence.playername.PlayerNameEventHandler;
+import com.mcresurgence.scorekeeping.KillScoreLoadManager;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import org.apache.logging.log4j.Logger;
 
@@ -24,13 +24,12 @@ public class ResurgentPVPStats {
     @EventHandler
     public void preInit(FMLPreInitializationEvent event) {
         LOGGER = event.getModLog();
-
         modLogger = new ModLogger(event.getModLog(), "[Resurgent PVP Stats] ");
-//        modLogger.info("Pre Initialization Stage.");
-
 
         NetworkHandler.init();
         ResurgentPVPStatsConfiguration.init(event.getModConfigurationDirectory());
+
+        KillScoreLoadManager.preInit(event.getModConfigurationDirectory());
     }
 
     @EventHandler
@@ -44,6 +43,7 @@ public class ResurgentPVPStats {
             MinecraftForge.EVENT_BUS.register(new PlayerJoinHandler());
             MinecraftForge.EVENT_BUS.register(new PlayerKillEventHandler());
         }
+
     }
 
 //    @EventHandler
