@@ -3,7 +3,7 @@
   "modid": "resurgent-pvp-stats",
   "name": "Resurgent PVP Stats",
   "description": "Provides detailed PvP statistics and custom logging features.",
-  "version": "0.3.0",   // Replace with your current version, e.g., "1.0.0"
+  "version": "0.4.0",
   "mcversion": "${mcversion}",   // Replace with the targeted Minecraft version, e.g., "1.12.2"
   "url": "",   // Add URL if available
   "updateUrl": "",   // Add URL if there's a specific update check URL

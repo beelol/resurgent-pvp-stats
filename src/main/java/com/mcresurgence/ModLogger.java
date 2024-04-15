@@ -39,6 +39,15 @@ public class ModLogger {
         }
     }
 
+    public void error(String message, Exception e) {
+        String finalMessage = String.format("ERROR: %s%s", prefix, message);
+        logger.error(finalMessage);
+
+        if (VERBOSE) {
+            System.out.println(finalMessage);
+        }
+    }
+
     public void debug(String message) {
         String finalMessage = String.format("DEBUG: %s%s", prefix, message);
         logger.debug(finalMessage);

@@ -13,18 +13,22 @@ import java.util.concurrent.Executors;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
+
+import com.mcresurgence.ModLogger;
+import com.mcresurgence.ResurgentPVPStats;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import org.apache.logging.log4j.Logger;
 
 public class KillScoreLoadManager {
     private static Map<UUID, PlayerKillScoreEntry> playerKills = new HashMap<>();
     private static File dataFile;
-    private static Logger logger;
+    private static ModLogger logger;
     private static Gson gson = new Gson();
     private static ExecutorService executor = Executors.newSingleThreadExecutor();
 
     public static void init(FMLPreInitializationEvent event) {
-        logger = event.getModLog();
+        logger = ResurgentPVPStats.modLogger;
+
         dataFile = new File(event.getModConfigurationDirectory(), "kills.json");
         loadKills();
     }
