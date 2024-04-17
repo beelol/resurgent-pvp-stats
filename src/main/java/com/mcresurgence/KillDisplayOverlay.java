@@ -1,18 +1,19 @@
 package com.mcresurgence;
 
+import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.minecraft.MinecraftProfileTexture;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.resources.DefaultPlayerSkin;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.client.resources.SkinManager;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 public class KillDisplayOverlay extends Gui {
     private final Minecraft minecraft;
@@ -26,6 +27,10 @@ public class KillDisplayOverlay extends Gui {
     private static Map<KillEntry, Float> alphaMap = new HashMap<>();
     private static Map<KillEntry, Long> startTimeMap = new HashMap<>();
     private static final Map<KillEntry, Float> yPosMap = new HashMap<>();
+    private static final Map<UUID, ResourceLocation> uuidToSkinMap = new HashMap<>();
+
+    private static final Map<UUID, CompletableFuture<ResourceLocation>> loadingFutures = new HashMap<>();
+
 
     public KillDisplayOverlay(Minecraft mc) {
         this.minecraft = mc;
@@ -36,13 +41,52 @@ public class KillDisplayOverlay extends Gui {
         return (alphaInt << 24) | 0xffffff;  // White with variable alpha
     }
 
-    public static void displayKillInfo(String killer, ItemStack weapon, String killed, EntityPlayer killerEntity, Entity killedEntity) {
-        KillEntry entry = new KillEntry(killer, weapon, killed, killerEntity, killedEntity);
+    private static CompletableFuture<ResourceLocation> loadSkin(UUID playerUUID) {
+        return loadingFutures.computeIfAbsent(playerUUID, uuid -> {
+            CompletableFuture<ResourceLocation> skinLoadFuture = new CompletableFuture<>();
+            SkinManager skinManager = Minecraft.getMinecraft().getSkinManager();
+            GameProfile profile = new GameProfile(playerUUID, null);
+
+            skinManager.loadProfileTextures(profile, (type, resourceLocation, profileTexture) -> {
+                if (type == MinecraftProfileTexture.Type.SKIN) {
+                    ResurgentPVPStats.modLogger.info(String.format("Successfully loaded skin for player %s. Inserting into map.", playerUUID));
+
+                    skinLoadFuture.complete(resourceLocation);
+                } else {
+                    ResurgentPVPStats.modLogger.info(String.format("Failed to load skin for player %s. Using default skin.", playerUUID));
+
+                    skinLoadFuture.complete(DefaultPlayerSkin.getDefaultSkin(uuid));
+                }
+            }, true);
+
+            
+            return skinLoadFuture.handle((loadedSkin, exception) -> {
+                if (exception != null) {
+                    ResurgentPVPStats.modLogger.error(String.format("Error loading skin for player %s: %s", playerUUID, exception.getMessage()));
+                    loadedSkin = DefaultPlayerSkin.getDefaultSkin(uuid); // Use default skin on error
+                }
+
+                uuidToSkinMap.put(uuid, loadedSkin);
+                loadingFutures.remove(uuid); // Ensure cleanup from map whether successful or failed
+                return loadedSkin;
+            });
+        });
+    }
+
+    public static void displayKillInfo(String killer, ItemStack weapon, String killed, UUID killerUUID, UUID killedUUID) {
+        CompletableFuture<ResourceLocation> killerSkinLoaded = loadSkin(killerUUID);
+        CompletableFuture<ResourceLocation> killedSkinLoaded = loadSkin(killedUUID);
+
+        CompletableFuture.allOf(killerSkinLoaded, killedSkinLoaded).thenRun(() -> {
+            addKillEntry(killer, weapon, killed, killerUUID, killedUUID);
+        });
+    }
+
+    private static void addKillEntry(String killer, ItemStack weapon, String killed, UUID killerUUID, UUID killedUUID) {
+        KillEntry entry = new KillEntry(killer, weapon, killed, killerUUID, killedUUID);
 
         killEntries.add(entry);
-
         alphaMap.put(entry, 1.0f);
-
         startTimeMap.put(entry, System.currentTimeMillis());
     }
 
@@ -59,16 +103,16 @@ public class KillDisplayOverlay extends Gui {
         lastTickTime = currentTime;
 
         float moveRatePerSecond = 10;
-        float moveDistancePerTick = moveRatePerSecond * (deltaTime / 1000.0f); // Distance to move per tick
+        float moveDistancePerTick = moveRatePerSecond * (deltaTime / 1000.0f);
 
         float alphaFadePerSecond = 0.5F;
-        float fadeRate = alphaFadePerSecond / 1000;  // Fade rate per millisecond
+        float fadeRate = alphaFadePerSecond / 1000;
 
-        int baseYPos = 15; // Base vertical position for the first entry
-        int paddingY = minecraft.fontRenderer.FONT_HEIGHT + 15; // Vertical spacing between entries
+        int baseYPos = 15;
+        int paddingY = minecraft.fontRenderer.FONT_HEIGHT + 15;
 
         Iterator<KillEntry> iterator = killEntries.iterator();
-        int index = 0; // Initialize an index counter for spacing calculation
+        int index = 0;
 
         while (iterator.hasNext()) {
             KillEntry entry = iterator.next();
@@ -129,7 +173,7 @@ public class KillDisplayOverlay extends Gui {
         int xPos = entryPaddingX;
         int textYOffset = yPos + 8 - minecraft.fontRenderer.FONT_HEIGHT / 2;
 
-        renderPlayerHead(xPos, yPos, entry.getKillerEntity());
+        renderPlayerHead(xPos, yPos, entry.getKillerUUID());
         xPos += headSize + paddingHeadToText;
         displayText(entry.getKiller(), xPos, textYOffset, alpha);
 
@@ -147,10 +191,7 @@ public class KillDisplayOverlay extends Gui {
         int endTextX = endX - killedTextWidth;
         int endHeadX = endTextX - headSize - paddingHeadToText;
 
-        if (entry.getKilledEntity() instanceof EntityPlayer) {
-            EntityPlayer killedPlayer = (EntityPlayer) entry.getKilledEntity();
-            renderPlayerHead(endHeadX, yPos, killedPlayer);
-        }
+        renderPlayerHead(endHeadX, yPos, entry.getKilledUUID());
 
         displayText(entry.getKilled(), endTextX, textYOffset, alpha);
 
@@ -161,69 +202,60 @@ public class KillDisplayOverlay extends Gui {
         minecraft.fontRenderer.drawStringWithShadow(entry, xPos, textYOffset, getTextColorFromAlpha(alpha));
     }
 
-    private void renderPlayerHead(int x, int y, EntityPlayer player) {
+    private void renderPlayerHead(int x, int y, UUID playerId) {
         ModLogger logger = ResurgentPVPStats.modLogger;
 
         logger.info("Attempting to renderPlayerHead");
 
-        if (player == null) {
+        if (playerId == null) {
             return;
         }
 
         logger.info("Player is not null.");
 
+//        Collection<com.mojang.authlib.properties.Property> properties =
+//                playerId.getGameProfile().getProperties().get("textures");
+//
+//        if (properties == null || properties.isEmpty()) {
+//            logger.info(String.format("Player [%s] has no texture properties. Continuing regardless.", playerId.getDisplayName()));
+//
+//        } else {
+//            logger.info(String.format("Player [%s] has texture properties. We could use one.", playerId.getDisplayName()));
+//        }
 
-        if (player.getGameProfile() == null) {
-            logger.info("player.getGameProfile() is null");
-
-            return;
-        }
-
-        logger.info("player.getGameProfile() is not null");
-
-
-        Collection<com.mojang.authlib.properties.Property> properties =
-                player.getGameProfile().getProperties().get("textures");
-
-        if (properties == null || properties.isEmpty()) {
-            logger.info(String.format("Player [%s] has no texture properties. Continuing regardless.", player.getDisplayName()));
-
-        } else {
-            logger.info(String.format("Player [%s] has texture properties. We could use one.", player.getDisplayName()));
-        }
-
-        ResourceLocation skinLocation = null;
-
-        if (Minecraft.getMinecraft().player.getGameProfile().getId() == player.getGameProfile().getId()) {
-            logger.info(String.format("Player %s is the same as the minecraft gameprofile ID, using SP player's skin", player.getDisplayName()));
-
-            skinLocation = Minecraft.getMinecraft().player.getLocationSkin();
-        } else {
-            logger.info(String.format("Player %s is not the user on this client, trying next method.", player.getDisplayName()));
-        }
+        ResourceLocation skinLocation = uuidToSkinMap.get(playerId);
+//
+//        if (Minecraft.getMinecraft().player.getGameProfile().getId() == playerId.getGameProfile().getId()) {
+//            logger.info(String.format("Player %s is the same as the minecraft gameprofile ID, using SP player's skin", playerId.getDisplayName()));
+//
+//            skinLocation = Minecraft.getMinecraft().player.getLocationSkin();
+//        } else {
+//            logger.info(String.format("Player %s is not the user on this client, trying next method.", playerId.getDisplayName()));
+//        }
 
 
 //        ResourceLocation skinLocation =
 //        Minecraft.getMinecraft().getSkinManager().loadSkin(new MinecraftProfileTexture(property.getValue(), null), MinecraftProfileTexture.Type.SKIN);
 //
 
-        Map<MinecraftProfileTexture.Type, MinecraftProfileTexture> map = minecraft.getSkinManager().loadSkinFromCache(player.getGameProfile());
-
-        if (map.containsKey(MinecraftProfileTexture.Type.SKIN)) {
-            skinLocation = minecraft.getSkinManager().loadSkin(map.get(MinecraftProfileTexture.Type.SKIN), MinecraftProfileTexture.Type.SKIN);
-
-            logger.info(String.format("Skin %s loaded via skinManager for player %s", skinLocation.toString(), player.getDisplayName()));
-        } else {
-            logger.info(String.format("Failed to load skin for player %s.", player.getDisplayName()));
-        }
-
+//        Map<MinecraftProfileTexture.Type, MinecraftProfileTexture> map = minecraft.getSkinManager().loadSkinFromCache(playerId.getGameProfile());
+//
+//        if (map.containsKey(MinecraftProfileTexture.Type.SKIN)) {
+//            skinLocation = minecraft.getSkinManager().loadSkin(map.get(MinecraftProfileTexture.Type.SKIN), MinecraftProfileTexture.Type.SKIN);
+//
+//            logger.info(String.format("Skin %s loaded via skinManager for player %s", skinLocation.toString(), playerId.getDisplayName()));
+//        } else {
+//            logger.info(String.format("Failed to load skin for player %s.", playerId.getDisplayName()));
+//        }
+//
+//
 
         if (skinLocation == null) {
             // If there's no custom skin, use the default skin based on player UUID
-            skinLocation = DefaultPlayerSkin.getDefaultSkin(player.getUniqueID());
-            logger.info("Player skinLocation is null after all methods. Using default skin.");
-        }
+            skinLocation = DefaultPlayerSkin.getDefaultSkin(playerId);
 
+            logger.info(String.format("Player %s skinLocation is null after all methods. Using default skin.", playerId));
+        }
 
         GlStateManager.pushMatrix();
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);

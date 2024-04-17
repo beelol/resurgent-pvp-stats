@@ -34,8 +34,6 @@ public class ResurgentPVPStats {
 
     @EventHandler
     public void init(FMLInitializationEvent event) {
-//        LOGGER.info("Initialization Stage.");
-
         if (event.getSide().isClient()) {
             MinecraftForge.EVENT_BUS.register(new KillDisplayOverlay(Minecraft.getMinecraft()));
             MinecraftForge.EVENT_BUS.register(new PlayerNameEventHandler());
@@ -45,9 +43,4 @@ public class ResurgentPVPStats {
         }
 
     }
-
-//    @EventHandler
-//    public void onServerStarting(FMLServerStartingEvent event) {
-//        modLogger.info("Server starting.");
-//    }
 }

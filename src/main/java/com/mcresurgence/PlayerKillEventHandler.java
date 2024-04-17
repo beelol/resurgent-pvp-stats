@@ -8,36 +8,30 @@ import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 
-//@Mod.EventBusSubscriber(modid = ResurgentPVPStats.MODID)
 public class PlayerKillEventHandler {
     @SubscribeEvent
     public void onLivingDeath(LivingDeathEvent event) {
 
         ModLogger logger = ResurgentPVPStats.modLogger;
 
-        logger.info("LivingDeathEvent fired.");
-
         if (event.getSource().getTrueSource() instanceof EntityPlayer) {
             EntityPlayer killer = (EntityPlayer) event.getSource().getTrueSource();
             ItemStack weapon = killer.getHeldItemMainhand();
 
             Entity killedEntity = event.getEntity();
-            logger.info("Player " + killer.getName() + " killed " + killedEntity.getName() + " using " + weapon.getDisplayName());
+            logger.info(String.format("Player %s killed %s using %s", killer.getName(), killedEntity.getName(), weapon.getDisplayName()));
 
             if (killedEntity instanceof EntityPlayer) {
-                Entity killed = event.getEntity();
 
-                PlayerKillInfo killInfo = new PlayerKillInfo(killed.getUniqueID(), killed.getName(), weapon.getItem().getRegistryName().toString());
 
-                // Record the kill in the KillScoreLoadManager
+                PlayerKillInfo killInfo = new PlayerKillInfo(killedEntity.getUniqueID(), killedEntity.getName(), weapon.getItem().getRegistryName().toString());
+
                 KillScoreLoadManager.recordKill(killer.getUniqueID(), killInfo);
 
                 try {
-                    NetworkHandler.INSTANCE.sendToAll(new DeathInfoPacket(killer.getUniqueID(), killer.getName(), killed.getUniqueID(), killed.getName(), weapon.getItem().getRegistryName().toString()));
+                    NetworkHandler.INSTANCE.sendToAll(new DeathInfoPacket(killer.getUniqueID(), killer.getName(), killedEntity.getUniqueID(), killedEntity.getName(), weapon.getItem().getRegistryName().toString()));
                 } catch (Exception e) {
-//                throw new RuntimeException(e);
-
-                    logger.warn("Failed to trigger kill feed entry for the following: Player " + killer.getName() + " killed " + killedEntity.getName() + " using " + weapon.getDisplayName());
+                    logger.error(String.format("Failed to trigger kill feed entry for the following: Player %s killed %s using %s", killer.getName(), killedEntity.getName(), weapon.getDisplayName()), e);
                 }
             }
         }
