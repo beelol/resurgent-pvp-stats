@@ -310,7 +310,7 @@ public class KillDisplayOverlay extends Gui {
 
         GlStateManager.scale(1.0F, 1.0F, 1.0F);
 
-        drawModalRectWithCustomSizedTexture(0, 0, 8, 8, 8, 8, width, width);
+        drawModalRectWithCustomSizedTexture(0, 0, 8, 8, 8, 8, width, height);
 
         GlStateManager.popMatrix();
     }
