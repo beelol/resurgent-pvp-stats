@@ -26,6 +26,10 @@ import net.minecraftforge.fml.common.gameevent.PlayerEvent;
 public class SkinManagerUtil {
     private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private static final Map<UUID, ResourceLocation> skinCache = new ConcurrentHashMap<>();
+
+    public static final Map<UUID, SkinDimensions> skinDimensionsByUUID = new ConcurrentHashMap<>();
+
+
     private static final Map<UUID, CompletableFuture<ResourceLocation>> loadingFutures = new ConcurrentHashMap<>();
 
     public static void registerEventListeners() {
@@ -132,7 +136,17 @@ public class SkinManagerUtil {
                     if (skinUrl == null) {
                         throw new RuntimeException("Failed to fetch skin URL.");
                     }
+
                     BufferedImage image = ImageIO.read(new URL(skinUrl));
+
+                    int width = image.getWidth();
+                    int height = image.getHeight();
+
+                    if (image != null) {
+                        skinDimensionsByUUID.put(playerUUID, new SkinDimensions(width, height));
+                    }
+
+                    ResurgentPVPStats.modLogger.info(String.format("Skin dimensions for player %s [%s]: %dx%d", playerName, playerUUID, width, height));
 
 
                     ResurgentPVPStats.modLogger.info(String.format("Is Image null?: %b", image == null));

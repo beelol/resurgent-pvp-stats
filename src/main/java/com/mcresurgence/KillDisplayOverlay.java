@@ -292,6 +292,16 @@ public class KillDisplayOverlay extends Gui {
             logger.info(String.format("Player %s skinLocation is null after all methods. Using default skin.", playerId));
         }
 
+        SkinDimensions dimensions = SkinManagerUtil.skinDimensionsByUUID.get(playerId);
+
+        int width = 64;
+        int height = 64;
+
+        if (dimensions != null) {
+            width = dimensions.width;
+            height = dimensions.height;
+        }
+
         GlStateManager.pushMatrix();
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 
@@ -300,7 +310,7 @@ public class KillDisplayOverlay extends Gui {
 
         GlStateManager.scale(1.0F, 1.0F, 1.0F);
 
-        drawModalRectWithCustomSizedTexture(0, 0, 8, 8, 8, 8, 64, 64);
+        drawModalRectWithCustomSizedTexture(0, 0, 8, 8, 8, 8, width, width);
 
         GlStateManager.popMatrix();
     }
