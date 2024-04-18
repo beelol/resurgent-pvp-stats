@@ -37,10 +37,10 @@ public class ResurgentPVPStats {
         if (event.getSide().isClient()) {
             MinecraftForge.EVENT_BUS.register(new KillDisplayOverlay(Minecraft.getMinecraft()));
             MinecraftForge.EVENT_BUS.register(new PlayerNameEventHandler());
+            SkinManagerUtil.registerEventListeners();
         } else {
             MinecraftForge.EVENT_BUS.register(new PlayerJoinHandler());
             MinecraftForge.EVENT_BUS.register(new PlayerKillEventHandler());
         }
-
     }
 }

@@ -13,7 +13,7 @@ import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.*;
 
 public class KillDisplayOverlay extends Gui {
     private final Minecraft minecraft;
@@ -27,10 +27,11 @@ public class KillDisplayOverlay extends Gui {
     private static Map<KillEntry, Float> alphaMap = new HashMap<>();
     private static Map<KillEntry, Long> startTimeMap = new HashMap<>();
     private static final Map<KillEntry, Float> yPosMap = new HashMap<>();
-    private static final Map<UUID, ResourceLocation> uuidToSkinMap = new HashMap<>();
+//    private static final Map<UUID, ResourceLocation> uuidToSkinMap = new HashMap<>();
 
     private static final Map<UUID, CompletableFuture<ResourceLocation>> loadingFutures = new HashMap<>();
 
+    private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     public KillDisplayOverlay(Minecraft mc) {
         this.minecraft = mc;
@@ -41,43 +42,77 @@ public class KillDisplayOverlay extends Gui {
         return (alphaInt << 24) | 0xffffff;  // White with variable alpha
     }
 
-    private static CompletableFuture<ResourceLocation> loadSkin(UUID playerUUID) {
-        return loadingFutures.computeIfAbsent(playerUUID, uuid -> {
-            CompletableFuture<ResourceLocation> skinLoadFuture = new CompletableFuture<>();
-            SkinManager skinManager = Minecraft.getMinecraft().getSkinManager();
-            GameProfile profile = new GameProfile(playerUUID, null);
-
-            skinManager.loadProfileTextures(profile, (type, resourceLocation, profileTexture) -> {
-                if (type == MinecraftProfileTexture.Type.SKIN) {
-                    ResurgentPVPStats.modLogger.info(String.format("Successfully loaded skin for player %s. Inserting into map.", playerUUID));
-
-                    skinLoadFuture.complete(resourceLocation);
-                } else {
-                    ResurgentPVPStats.modLogger.info(String.format("Failed to load skin for player %s. Using default skin.", playerUUID));
-
-                    skinLoadFuture.complete(DefaultPlayerSkin.getDefaultSkin(uuid));
-                }
-            }, true);
-
-            
-            return skinLoadFuture.handle((loadedSkin, exception) -> {
-                if (exception != null) {
-                    ResurgentPVPStats.modLogger.error(String.format("Error loading skin for player %s: %s", playerUUID, exception.getMessage()));
-                    loadedSkin = DefaultPlayerSkin.getDefaultSkin(uuid); // Use default skin on error
-                }
-
-                uuidToSkinMap.put(uuid, loadedSkin);
-                loadingFutures.remove(uuid); // Ensure cleanup from map whether successful or failed
-                return loadedSkin;
-            });
-        });
-    }
+//    private static CompletableFuture<ResourceLocation> loadSkin(UUID playerUUID, String playerName) {
+//        return loadingFutures.computeIfAbsent(playerUUID, uuid -> {
+//            CompletableFuture<ResourceLocation> skinLoadFuture = new CompletableFuture<>();
+//            SkinManager skinManager = Minecraft.getMinecraft().getSkinManager();
+//            GameProfile profile = new GameProfile(uuid, playerName);
+//
+//            ResurgentPVPStats.modLogger.info(String.format("Attempting to load skin for player %s [%s].", playerName, uuid));
+//
+//            skinManager.loadProfileTextures(profile, (type, resourceLocation, profileTexture) -> {
+//                ResurgentPVPStats.modLogger.info(String.format("Loaded profile textures for player %s [%s].", playerName, uuid));
+//
+//                ResurgentPVPStats.modLogger.info(String.format("resource Location: %s, type: %s, profileTexture: %s", resourceLocation, type, profileTexture));
+//
+//                if (type == MinecraftProfileTexture.Type.SKIN) {
+//                    ResurgentPVPStats.modLogger.info(String.format("Successfully loaded skin for player %s [%s]. Inserting into map.", playerName, uuid));
+//
+//                    skinLoadFuture.complete(resourceLocation);
+//                } else {
+//                    ResurgentPVPStats.modLogger.info(String.format("Failed to load skin for player %s [%s]. Using default skin.", playerName, uuid));
+//
+//                    skinLoadFuture.complete(DefaultPlayerSkin.getDefaultSkin(uuid));
+//                }
+//            }, true);
+//
+//            scheduler.schedule(() -> {
+//                if (!skinLoadFuture.isDone()) {
+//                    skinLoadFuture.completeExceptionally(new TimeoutException("Failed to load skin within timeout period"));
+//                }
+//            }, 5, TimeUnit.SECONDS);
+//
+//            return skinLoadFuture.handle((loadedSkin, exception) -> {
+//                if (exception != null) {
+//                    ResurgentPVPStats.modLogger.error(String.format("Error loading skin for player %s [%s]: %s", playerName, playerUUID, exception.getMessage()));
+//                    loadedSkin = DefaultPlayerSkin.getDefaultSkin(uuid); // Use default skin on error
+//                }
+//
+//                uuidToSkinMap.put(uuid, loadedSkin);
+//                loadingFutures.remove(uuid); // Ensure cleanup from map whether successful or failed
+//
+//                ResurgentPVPStats.modLogger.info(String.format("Successfully loaded skin for player %s [%s]. Inserting into map.", playerName, playerUUID));
+//
+//                return loadedSkin;
+//            });
+//        });
+//    }
 
     public static void displayKillInfo(String killer, ItemStack weapon, String killed, UUID killerUUID, UUID killedUUID) {
-        CompletableFuture<ResourceLocation> killerSkinLoaded = loadSkin(killerUUID);
-        CompletableFuture<ResourceLocation> killedSkinLoaded = loadSkin(killedUUID);
+        CompletableFuture<ResourceLocation> killerSkinLoaded = SkinManagerUtil.getOrLoadSkin(killerUUID, killer)
+                .exceptionally(ex -> {
+                    ResurgentPVPStats.modLogger.error("Failed to load killer skin: " + ex.getMessage());
+                    return DefaultPlayerSkin.getDefaultSkin(killerUUID); // Fallback skin
+                });
 
-        CompletableFuture.allOf(killerSkinLoaded, killedSkinLoaded).thenRun(() -> {
+        CompletableFuture<ResourceLocation> killedSkinLoaded = SkinManagerUtil.getOrLoadSkin(killedUUID, killed)
+                .exceptionally(ex -> {
+                    ResurgentPVPStats.modLogger.error("Failed to load killed skin: " + ex.getMessage());
+                    return DefaultPlayerSkin.getDefaultSkin(killedUUID); // Fallback skin
+                });
+
+        CompletableFuture.allOf(killerSkinLoaded, killedSkinLoaded).whenComplete((location, ex) -> {
+            if (ex != null) {
+                ResurgentPVPStats.modLogger.error("Failed to load skin: " + ex.getMessage());
+            }
+
+            ResurgentPVPStats.modLogger.info(String.format(
+                    "Completed both skin loads for Killer Player %s [%s] and Killed Player %s [%s]",
+                    killer,
+                    killerUUID.toString(),
+                    killed,
+                    killedUUID.toString()));
+
             addKillEntry(killer, weapon, killed, killerUUID, killedUUID);
         });
     }
@@ -223,7 +258,7 @@ public class KillDisplayOverlay extends Gui {
 //            logger.info(String.format("Player [%s] has texture properties. We could use one.", playerId.getDisplayName()));
 //        }
 
-        ResourceLocation skinLocation = uuidToSkinMap.get(playerId);
+        ResourceLocation skinLocation = SkinManagerUtil.getSkin(playerId);
 //
 //        if (Minecraft.getMinecraft().player.getGameProfile().getId() == playerId.getGameProfile().getId()) {
 //            logger.info(String.format("Player %s is the same as the minecraft gameprofile ID, using SP player's skin", playerId.getDisplayName()));
@@ -268,13 +303,5 @@ public class KillDisplayOverlay extends Gui {
         drawModalRectWithCustomSizedTexture(0, 0, 8, 8, 8, 8, 64, 64);
 
         GlStateManager.popMatrix();
-    }
-
-    private float calculateYPosition(int index) {
-
-        int baseYPos = 15;
-        int paddingY = minecraft.fontRenderer.FONT_HEIGHT + 15;
-
-        return baseYPos + paddingY * index;
     }
 }

@@ -23,15 +23,24 @@ public class PlayerKillEventHandler {
 
             if (killedEntity instanceof EntityPlayer) {
 
+                EntityPlayer killedPlayer = (EntityPlayer) killedEntity;
 
-                PlayerKillInfo killInfo = new PlayerKillInfo(killedEntity.getUniqueID(), killedEntity.getName(), weapon.getItem().getRegistryName().toString());
+
+                PlayerKillInfo killInfo = new PlayerKillInfo(killedEntity.getUniqueID(), killedPlayer.getName(), weapon.getItem().getRegistryName().toString());
 
                 KillScoreLoadManager.recordKill(killer.getUniqueID(), killInfo);
 
+                logger.info(String.format("Killed entity %s was a player, sending info.", killer.getName(), killedEntity.getName(), weapon.getDisplayName()));
+
                 try {
-                    NetworkHandler.INSTANCE.sendToAll(new DeathInfoPacket(killer.getUniqueID(), killer.getName(), killedEntity.getUniqueID(), killedEntity.getName(), weapon.getItem().getRegistryName().toString()));
+                    NetworkHandler.INSTANCE.sendToAll(new DeathInfoPacket(
+                            killer.getUniqueID(),
+                            killer.getName(),
+                            killedPlayer.getUniqueID(),
+                            killedPlayer.getName(),
+                            weapon.getItem().getRegistryName().toString()));
                 } catch (Exception e) {
-                    logger.error(String.format("Failed to trigger kill feed entry for the following: Player %s killed %s using %s", killer.getName(), killedEntity.getName(), weapon.getDisplayName()), e);
+                    logger.error(String.format("Failed to trigger kill feed entry for the following: Player %s killed %s using %s", killer.getName(), killedPlayer.getName(), weapon.getDisplayName()), e);
                 }
             }
         }

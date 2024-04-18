@@ -69,6 +69,7 @@ public class DeathInfoPacket implements IMessage {
 
                 KillDisplayOverlay.displayKillInfo(message.killerName, weapon, message.killedName, message.killerId, message.killedId);
 
+
                 logger.info("Player " + message.killerName + " killed " + message.killedName + " using " + weapon.getDisplayName());
             });
             return null;
