@@ -5,7 +5,7 @@ import org.apache.logging.log4j.Logger;
 public class ModLogger {
     private Logger logger;
     private String prefix;
-    private static final boolean VERBOSE = true;
+    private static final boolean VERBOSE = false;
 
     public ModLogger(Logger logger, String prefix) {
         this.logger = logger;

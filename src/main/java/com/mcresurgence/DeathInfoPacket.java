@@ -22,7 +22,8 @@ public class DeathInfoPacket implements IMessage {
     private String weaponRegistryName;
     private String killedName;      // Name of the killed entity
 
-    public DeathInfoPacket() {}
+    public DeathInfoPacket() {
+    }
 
     public DeathInfoPacket(UUID killer, String killerName, UUID killed, String killedName, String weapon) {
         this.killerId = killer;
@@ -62,21 +63,14 @@ public class DeathInfoPacket implements IMessage {
             Minecraft.getMinecraft().addScheduledTask(() -> {
                 ModLogger logger = ResurgentPVPStats.modLogger;
 
-                // Assuming we are on the client and can access client-only classes
-                EntityPlayer killer = Minecraft.getMinecraft().world.getPlayerEntityByName(message.killerName);
-                Entity killed = ClientEntityFinder.findEntityByUUID(message.killedId); // Generic entities
-
-                // Retrieve the Item from its registry name
                 Item weaponItem = Item.getByNameOrId(message.weaponRegistryName);
-                ItemStack weapon = weaponItem != null ? new ItemStack(weaponItem) : new ItemStack(Items.WOODEN_SWORD); // Default item example
 
-                if (killer != null && killed != null) {
-                    KillDisplayOverlay.displayKillInfo(killer.getName(), weapon, killed.getName(), killer, killed);
+                ItemStack weapon = weaponItem != null ? new ItemStack(weaponItem) : new ItemStack(Items.WOODEN_SWORD);
 
-                    logger.info("Player " + killer.getName() + " killed " + killed.getName() + " using " + weapon.getDisplayName());
-                } else {
-                    logger.info("Error retrieving player data or weapon for kill display.");
-                }
+                KillDisplayOverlay.displayKillInfo(message.killerName, weapon, message.killedName, message.killerId, message.killedId);
+
+
+                logger.info("Player " + message.killerName + " killed " + message.killedName + " using " + weapon.getDisplayName());
             });
             return null;
         }
