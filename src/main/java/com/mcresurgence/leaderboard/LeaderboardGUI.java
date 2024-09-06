@@ -23,7 +23,7 @@ public class LeaderboardGUI extends GuiScreen {
     private int totalPages = 1;
     private List<LeaderboardEntry> leaderboardEntries;
     private final int playersPerPage = 10;
-    private final int headSize = 16;
+    private final int headSize = 8;
 
     private final Map<UUID, ResourceLocation> skinCache = new ConcurrentHashMap<>();
 
@@ -37,21 +37,25 @@ public class LeaderboardGUI extends GuiScreen {
 
     @Override
     public void initGui() {
-        // Clear any existing buttons
         this.buttonList.clear();
+
+        int centerX = this.width / 2;
+        int buttonWidth = 80;
+        int buttonY = this.height - 30 - 25 - 5;
 
         // Only add buttons if there are more than one page
         if (totalPages > 1) {
-            int centerX = this.width / 2;
-            int buttonWidth = 80;
-            int buttonY = this.height - 30;
 
             // Add buttons for page navigation
             this.buttonList.add(new GuiButton(1, centerX - buttonWidth - 5, buttonY, buttonWidth, 20, "Previous"));
+
             this.buttonList.add(new GuiButton(2, centerX + 5, buttonY, buttonWidth, 20, "Next"));
 
-            updateButtonStates();
         }
+
+        this.buttonList.add(new GuiButton(3, centerX - buttonWidth / 2, buttonY + 25, buttonWidth, 20, "Close"));
+
+        updateButtonStates();
     }
 
     @Override
@@ -66,6 +70,7 @@ public class LeaderboardGUI extends GuiScreen {
                     }
 
                     drawLeaderboard();
+                    updateButtonStates();
                 }
                 break;
             case 2: // Next page
@@ -77,7 +82,11 @@ public class LeaderboardGUI extends GuiScreen {
                     }
 
                     drawLeaderboard();
+                    updateButtonStates();
                 }
+                break;
+            case 3: // Close button
+                this.mc.displayGuiScreen(null); // Close the GUI
                 break;
         }
     }
@@ -121,7 +130,6 @@ public class LeaderboardGUI extends GuiScreen {
 
             int yPosition = yStart + (i - start) * entryHeight;
             int textYOffset = yPosition + (entryHeight - fontRenderer.FONT_HEIGHT) / 2;
-//            int headYOffset = yPosition + (entryHeight - fontRenderer.FONT_HEIGHT) / 2;
 
             // Draw background for each entry with a slightly darker color
             int backgroundColor = (i % 2 == 0) ? 0x20000000 : 0x10000000; // Alternating color for rows
@@ -133,7 +141,7 @@ public class LeaderboardGUI extends GuiScreen {
             if (playerHead == null) {
                 drawString(fontRenderer, "...", startX + 4, textYOffset, 0xFFFFFF);  // Display dots as loading indicator
             } else {
-                drawPlayerHead(playerHead, startX, textYOffset, playerUUID);
+                drawPlayerHead(playerHead, startX + (headColumnWidth / 2) - headSize / 2, textYOffset, playerUUID);
             }
 
             // Draw player name
@@ -149,7 +157,7 @@ public class LeaderboardGUI extends GuiScreen {
             }
         }
 
-        drawCenteredString(fontRenderer, "Page: " + (currentPage + 1) + " / " + totalPages, this.width / 2, this.height - 50, 0xFFFFFF);
+        drawCenteredString(fontRenderer, "Page: " + (currentPage + 1) + " / " + totalPages, this.width / 2, this.height - 30 - 25 - 5 - 20, 0xFFFFFF);
     }
 
     public void updateLeaderboardData(List<LeaderboardEntry> newData) {
@@ -200,16 +208,13 @@ public class LeaderboardGUI extends GuiScreen {
     }
 
     private void updateButtonStates() {
-        // Enable or disable buttons based on the current page
-
-        GuiButton previousButton = buttonList.get(0);
-        GuiButton nextButton = buttonList.get(1);
-
-        if (previousButton != null) {
+        if (buttonList.size() > 1) {
+            GuiButton previousButton = buttonList.get(0);
             previousButton.enabled = (currentPage > 0);
         }
 
-        if (nextButton != null) {
+        if (buttonList.size() > 2) {
+            GuiButton nextButton = buttonList.get(1);
             nextButton.enabled = (currentPage < totalPages - 1);
         }
     }
@@ -266,37 +271,11 @@ public class LeaderboardGUI extends GuiScreen {
         // Bind the texture and draw the player head
         Minecraft.getMinecraft().getTextureManager().bindTexture(playerSkin);
 
-        GlStateManager.translate(x, y - headSize / 2, 0);
+        GlStateManager.translate(x, y, 0);
         GlStateManager.scale(1.0F, 1.0F, 1.0F);
-
-//        drawModalRectWithCustomSizedTexture(x, y, 8, 8, headSize, headSize, width, height);
 
         drawModalRectWithCustomSizedTexture(0, 0, 8, 8, 8, 8, width, height);
 
         GlStateManager.popMatrix();
     }
-
-//    private void renderPlayerHead(ResourceLocation skinLocation, int x, int y, UUID playerId) {
-////        SkinDimensions dimensions = SkinManagerUtil.skinDimensionsByUUID.get(playerId);
-////
-////        int width = 64;
-////        int height = 64;
-////
-////        if (dimensions != null) {
-////            width = dimensions.getWidth();
-////            height = dimensions.getHeight();
-////        }
-//
-////        GlStateManager.pushMatrix();
-////        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-//
-//        Minecraft.getMinecraft().getTextureManager().bindTexture(skinLocation);
-//        GlStateManager.translate(x, y + headSize / 2, 0);
-//
-//        GlStateManager.scale(1.0F, 1.0F, 1.0F);
-//
-//        drawModalRectWithCustomSizedTexture(0, 0, 8, 8, 8, 8, width, height);
-//
-//        GlStateManager.popMatrix();
-//    }
 }

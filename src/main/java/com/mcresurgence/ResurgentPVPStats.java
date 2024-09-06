@@ -24,7 +24,7 @@ import org.lwjgl.input.Keyboard;
 public class ResurgentPVPStats {
     public static final String MODID = "resurgent-pvp-stats";
     public static final String NAME = "Resurgent PVP Stats";
-    public static final String VERSION = "0.5.0";
+    public static final String VERSION = "0.6.0";
 
     public static Logger LOGGER;
     public static ModLogger modLogger;

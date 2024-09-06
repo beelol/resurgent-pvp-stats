@@ -12,8 +12,17 @@ public class KeyInputHandler {
     public void onKeyInput(InputEvent.KeyInputEvent event) {
         // Check if the key binding is pressed
         if (ClientEventHandler.keyToggleLeaderboard.isPressed()) {
-            // Open the leaderboard GUI
-            Minecraft.getMinecraft().displayGuiScreen(new LeaderboardGUI());
+            // Get the current Minecraft instance
+            Minecraft mc = Minecraft.getMinecraft();
+
+            // Check if the leaderboard GUI is currently open
+            if (mc.currentScreen instanceof LeaderboardGUI) {
+                // If it's open, close it by setting current screen to null
+                mc.displayGuiScreen(null);
+            } else {
+                // If it's not open, open the leaderboard GUI
+                mc.displayGuiScreen(new LeaderboardGUI());
+            }
         }
     }
 }
