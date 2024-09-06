@@ -26,9 +26,9 @@ public class PlayerKillEventHandler {
                 EntityPlayer killedPlayer = (EntityPlayer) killedEntity;
 
 
-                PlayerKillInfo killInfo = new PlayerKillInfo(killedEntity.getUniqueID(), killedPlayer.getName(), weapon.getItem().getRegistryName().toString());
+                PlayerKillInfo killInfo = new PlayerKillInfo(killedEntity.getUniqueID(), killedPlayer.getName(), weapon.getItem().getRegistryName().toString(), killer.getUniqueID(), killer.getName());
 
-                KillScoreLoadManager.recordKill(killer.getUniqueID(), killInfo);
+                KillScoreLoadManager.recordKill(killInfo);
 
                 logger.info(String.format("Killed entity %s was a player, sending info.", killer.getName(), killedEntity.getName(), weapon.getDisplayName()));
 

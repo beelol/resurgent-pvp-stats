@@ -25,6 +25,10 @@ public class KillScoreLoadManager {
     private static Gson gson = new Gson();
     private static ExecutorService executor = Executors.newSingleThreadExecutor();
 
+    public static Map<UUID, PlayerKillScoreEntry> getPlayerKills() {
+        return playerKills;
+    }
+
     public static void preInit(File configDir) {
         ResurgentPVPStats.modLogger.info("Initializing KillScoreLoadManager");
         String filename = "player-kills.json";
@@ -59,16 +63,19 @@ public class KillScoreLoadManager {
         loadKills();
     }
 
-    public static void recordKill(UUID killerUUID, PlayerKillInfo killInfo) {
+    public static void recordKill(PlayerKillInfo killInfo) {
         if (playerKills == null) {
             ResurgentPVPStats.modLogger.error("Attempted to record a kill before playerKills was initialized.");
             return;
         }
 
+        String killerName = killInfo.getKillerName();
+        UUID killerUUID = killInfo.getKillerUUID();
+
         ResurgentPVPStats.modLogger.info("Recording kill...");
 
         try {
-            playerKills.computeIfAbsent(killerUUID, k -> new PlayerKillScoreEntry()).addKill(killInfo);
+            playerKills.computeIfAbsent(killerUUID, k -> new PlayerKillScoreEntry(killerName)).addKill(killInfo);
             saveKillsAsync();
         } catch (Exception e) {
             ResurgentPVPStats.modLogger.error(String.format("[KillScoreLoadManager] could not record kill. Error: %s", e.getMessage()), e);

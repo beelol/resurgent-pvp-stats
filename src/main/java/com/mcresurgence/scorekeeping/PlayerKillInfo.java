@@ -7,10 +7,16 @@ public class PlayerKillInfo {
     private String killedName;
     private String weaponRegistryName;
 
-    public PlayerKillInfo(UUID killedUUID, String killedName, String weaponRegistryName) {
+    private UUID killerUUID;  // New field for killer's UUID
+    private String killerName;  // New field for killer's name
+
+    public PlayerKillInfo(UUID killedUUID, String killedName, String weaponRegistryName, UUID killerUUID, String killerName) {
         this.killedUUID = killedUUID;
         this.killedName = killedName;
         this.weaponRegistryName = weaponRegistryName;
+
+        this.killerUUID = killerUUID;
+        this.killerName = killerName;
     }
 
     public UUID getKilledUUID() {
@@ -35,5 +41,21 @@ public class PlayerKillInfo {
 
     public void setWeaponRegistryName(String weaponRegistryName) {
         this.weaponRegistryName = weaponRegistryName;
+    }
+
+    public UUID getKillerUUID() {
+        return killerUUID;
+    }
+
+    public void setKillerUUID(UUID killerUUID) {
+        this.killerUUID = killerUUID;
+    }
+
+    public String getKillerName() {
+        return killerName;
+    }
+
+    public void setKillerName(String killerName) {
+        this.killerName = killerName;
     }
 }

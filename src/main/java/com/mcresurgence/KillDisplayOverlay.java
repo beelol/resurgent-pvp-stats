@@ -248,42 +248,7 @@ public class KillDisplayOverlay extends Gui {
 
         logger.info("Player is not null.");
 
-//        Collection<com.mojang.authlib.properties.Property> properties =
-//                playerId.getGameProfile().getProperties().get("textures");
-//
-//        if (properties == null || properties.isEmpty()) {
-//            logger.info(String.format("Player [%s] has no texture properties. Continuing regardless.", playerId.getDisplayName()));
-//
-//        } else {
-//            logger.info(String.format("Player [%s] has texture properties. We could use one.", playerId.getDisplayName()));
-//        }
-
         ResourceLocation skinLocation = SkinManagerUtil.getSkin(playerId);
-//
-//        if (Minecraft.getMinecraft().player.getGameProfile().getId() == playerId.getGameProfile().getId()) {
-//            logger.info(String.format("Player %s is the same as the minecraft gameprofile ID, using SP player's skin", playerId.getDisplayName()));
-//
-//            skinLocation = Minecraft.getMinecraft().player.getLocationSkin();
-//        } else {
-//            logger.info(String.format("Player %s is not the user on this client, trying next method.", playerId.getDisplayName()));
-//        }
-
-
-//        ResourceLocation skinLocation =
-//        Minecraft.getMinecraft().getSkinManager().loadSkin(new MinecraftProfileTexture(property.getValue(), null), MinecraftProfileTexture.Type.SKIN);
-//
-
-//        Map<MinecraftProfileTexture.Type, MinecraftProfileTexture> map = minecraft.getSkinManager().loadSkinFromCache(playerId.getGameProfile());
-//
-//        if (map.containsKey(MinecraftProfileTexture.Type.SKIN)) {
-//            skinLocation = minecraft.getSkinManager().loadSkin(map.get(MinecraftProfileTexture.Type.SKIN), MinecraftProfileTexture.Type.SKIN);
-//
-//            logger.info(String.format("Skin %s loaded via skinManager for player %s", skinLocation.toString(), playerId.getDisplayName()));
-//        } else {
-//            logger.info(String.format("Failed to load skin for player %s.", playerId.getDisplayName()));
-//        }
-//
-//
 
         if (skinLocation == null) {
             // If there's no custom skin, use the default skin based on player UUID

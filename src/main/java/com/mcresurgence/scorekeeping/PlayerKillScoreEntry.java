@@ -6,9 +6,11 @@ import java.util.List;
 public class PlayerKillScoreEntry {
     private int killCount = 0;
     private List<PlayerKillInfo> kills;
+    private String killerName;
 
-    public PlayerKillScoreEntry() {
+    public PlayerKillScoreEntry(String killerName) {
         this.kills = new ArrayList<>();
+        this.killerName = killerName;
     }
 
     public void addKill(PlayerKillInfo kill) {
@@ -30,5 +32,13 @@ public class PlayerKillScoreEntry {
 
     public void setKills(List<PlayerKillInfo> kills) {
         this.kills = kills;
+    }
+
+    public String getKillerName() {
+        return killerName;
+    }
+
+    public void setKillerName(String killerName) {
+        this.killerName = killerName;
     }
 }
